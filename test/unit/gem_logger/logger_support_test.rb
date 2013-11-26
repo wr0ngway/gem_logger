@@ -176,14 +176,14 @@ module GemLogger
       should "have correct logger instance with includes and inheritance" do
         foosuper = new_class("FooSuper#{@uniq}") { include GemLogger::LoggerSupport; }
         foo = new_class("Foo#{@uniq}", foosuper) { }
-        assert_equal "rails::GemLogger::LoggerSupportTest::#{foosuper.name.split('::').last}::#{foo.name.split('::').last}", foo.logger.fullname
+        assert_equal "rails::GemLogger::LoggerSupportTest::#{foo.name.split('::').last}", foo.logger.fullname
       end
     
       should "have correct logger instance with multiple includes and inheritance" do
         foomod = new_module("FooMod#{@uniq}") { extend ActiveSupport::Concern; include GemLogger::LoggerSupport; }
         foosuper = new_class("FooSuper#{@uniq}") { include foomod; }
         foo = new_class("Foo#{@uniq}", foosuper) { include GemLogger::LoggerSupport; include foomod; }
-        assert_equal "rails::GemLogger::LoggerSupportTest::#{foosuper.name.split('::').last}::#{foo.name.split('::').last}", foo.logger.fullname
+        assert_equal "rails::GemLogger::LoggerSupportTest::#{foo.name.split('::').last}", foo.logger.fullname
       end
 
     end
