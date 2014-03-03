@@ -122,14 +122,14 @@ module GemLogger
         require 'lumber'
         
         yml = <<-EOF
-          log4r_config:
-            pre_config:
-              root:
-                level: 'DEBUG'
-            loggers:
-              - name: "rails"
-                level: DEBUG
-            outputters: []
+log4r_config:
+  pre_config:
+    root:
+      level: 'DEBUG'
+  loggers:
+    - name: "rails"
+      level: DEBUG
+  outputters: []
         EOF
         
         cfg = Log4r::YamlConfigurator
