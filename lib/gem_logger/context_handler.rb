@@ -1,21 +1,31 @@
-require 'log4r'
-
 module GemLogger
   module ContextHandler
     extend ActiveSupport::Concern
 
-    # Log4r::MDC.get_context returns a copy of the log context that is not
-    # modified when we remove the context variables added
+    # Initializes and returns context hash.
     def get_context
-      Log4r::MDC.get_context
+      @context_hash ||= {}
     end
 
     def add_to_context(key, value)
-      Log4r::MDC.put(key.to_s, value.to_s)
+      @context_hash[key.to_s] = value.to_s
     end
 
     def remove_from_context(key)
-      Log4r::MDC.remove(key.to_s)
+      @context_hash.delete(key.to_s)
+    end
+
+    # Adds the keys/values to the message to be logged in a basic [key=val] format.
+    def format_msg_with_context(msg)
+      if @context_hash.keys.length > 0
+        msg_context = '['
+        @context_hash.each do |k, v|
+          msg_context += "#{k}=#{v} "
+        end
+        msg_context += '] '
+        msg = msg.prepend(msg_context)
+      end
+      msg
     end
   end
 end

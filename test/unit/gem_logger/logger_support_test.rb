@@ -123,13 +123,12 @@ module GemLogger
       end
 
       should "add the context to generated messages" do
-        foo = Foo.new
 
         GemLogger::LoggerSupport::LogContextLogger.any_instance.expects(:add_to_context).with("ctx", "1")
         GemLogger::LoggerSupport::LogContextLogger.any_instance.expects(:remove_from_context).with('ctx')
-        foo.logger.expects(:info).with("msg")
+        Foo.logger.expects(:info).with("msg")
 
-        foo.logger.context("ctx" => "1").info("msg")
+        Foo.logger.context("ctx" => "1").info("msg")
       end
 
       should "allow symbols as contexts" do
@@ -140,27 +139,27 @@ module GemLogger
       end
 
       should "implement debug" do
-        Foo.logger.expects(:debug).with("msg")
+        Foo.logger.expects(:debug).with("[ctx=1 ] msg")
         Foo.logger.context(:ctx => "1").debug("msg")
       end
 
       should "implement info" do
-        Foo.logger.expects(:info).with("msg")
+        Foo.logger.expects(:info).with("[ctx=1 ] msg")
         Foo.logger.context(:ctx => "1").info("msg")
       end
 
       should "implement warn" do
-        Foo.logger.expects(:warn).with("msg")
+        Foo.logger.expects(:warn).with("[ctx=1 ] msg")
         Foo.logger.context(:ctx => "1").warn("msg")
       end
 
       should "implement error" do
-        Foo.logger.expects(:error).with("msg")
+        Foo.logger.expects(:error).with("[ctx=1 ] msg")
         Foo.logger.context(:ctx => "1").error("msg")
       end
 
       should "implement fatal" do
-        Foo.logger.expects(:fatal).with("msg")
+        Foo.logger.expects(:fatal).with("[ctx=1 ] msg")
         Foo.logger.context(:ctx => "1").fatal("msg")
       end
 
@@ -194,8 +193,10 @@ module GemLogger
         end
 
         should 'restore previous log context after logging' do
-          GemLogger::LoggerSupport::LogContextLogger.any_instance.stubs(:get_context).returns({'foo' => 'bar'}).once
+          GemLogger::LoggerSupport::LogContextLogger.any_instance.stubs(:get_context).returns({'foo' => 'bar'})
           GemLogger::LoggerSupport::LogContextLogger.any_instance.expects(:add_to_context).with(:event_type, {'foo' => 'baz'})
+          GemLogger::LoggerSupport::LogContextLogger.any_instance.expects(:remove_from_context).with(:event_type)
+          GemLogger::LoggerSupport::LogContextLogger.any_instance.expects(:format_msg_with_context).with('msg')
           GemLogger::LoggerSupport::LogContextLogger.any_instance.expects(:add_to_context).with('foo', 'bar')
 
           Foo.logger.event_context('foo' => 'baz').info("msg")
@@ -222,12 +223,12 @@ module GemLogger
         end
 
         should "log the backtrace" do
-          Foo.logger.expects(:error).with("msg: err (no backtrace)")
+          Foo.logger.expects(:error).with("[exception=StandardError ] msg: err (no backtrace)")
           Foo.logger.log_exception(StandardError.new("err"), "msg")
         end
 
         should 'allow the level to be changed as an option' do
-          Foo.logger.expects(:warn).with("msg: err (no backtrace)")
+          Foo.logger.expects(:warn).with("[exception=StandardError ] msg: err (no backtrace)")
           Foo.logger.log_exception(StandardError.new("err"), "msg", :level => :warn)
         end
       end

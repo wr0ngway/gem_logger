@@ -8,32 +8,38 @@ module GemLogger
         include GemLogger::ContextHandler
       end
     end
-    should "pass add_to_context to Log4r put" do
-      Log4r::MDC.expects(:put).with('key', 'value')
-      MyClass.new.add_to_context('key', 'value')
+
+    should "return empty hash on get_context" do
+      assert_equal Hash.new, MyClass.new.get_context
+    end
+
+    should 'add given arguments to context on add_context' do
+      klass = MyClass.new
+      klass.get_context
+      klass.add_to_context('foo', 'bar')
+      assert_equal Hash['foo', 'bar'], klass.get_context
     end
 
     should "convert add_to_context args to strings" do
-      Log4r::MDC.expects(:put).with('key', 'value')
-      MyClass.new.add_to_context(:key, :value)
-    end
-
-    should 'get existing Log4r context' do
-      Log4r::MDC.put('some', 'thing')
-      context = MyClass.new.get_context
-      assert_equal 'thing', context['some']
-      # Clean up.
-      Log4r::MDC.remove('some')
+      klass = MyClass.new
+      klass.get_context
+      klass.add_to_context(:foo, :bar)
+      assert_equal Hash['foo', 'bar'], klass.get_context
     end
 
     should "pass remove_from_context to Log4r remove" do
-      Log4r::MDC.expects(:remove).with('key')
-      MyClass.new.remove_from_context('key')
+      klass = MyClass.new
+      klass.get_context
+      klass.remove_from_context('foo')
+      assert_equal Hash.new, klass.get_context
     end
 
     should "convert remove_from_context args to strings" do
-      Log4r::MDC.expects(:remove).with('key')
-      MyClass.new.remove_from_context(:key)
+      klass = MyClass.new
+      klass.get_context
+      klass.add_to_context('foo', 'bar')
+      klass.remove_from_context(:foo)
+      assert_equal Hash.new, klass.get_context
     end
   end
 end

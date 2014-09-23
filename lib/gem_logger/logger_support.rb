@@ -103,6 +103,7 @@ module GemLogger
       def log(level, msg)
         existing_context = get_context
         self.log_context.each { |k,v| add_to_context(k, v) }
+        msg = format_msg_with_context(msg)
         self.logger.send(level, msg)
       ensure
         self.log_context.each { |k,v| remove_from_context(k) }
