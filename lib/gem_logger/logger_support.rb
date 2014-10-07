@@ -79,7 +79,7 @@ module GemLogger
       end
     end
 
-    # The base context logger, intended to extend a Log4r logger
+    # The base context logger.
     module LogContext
       include ContextLoggerCommon
 
