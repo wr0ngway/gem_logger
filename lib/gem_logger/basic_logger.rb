@@ -10,7 +10,7 @@ module GemLogger
         GemLogger::default_logger
       end
     end
-    
+
   end
-  
+
 end
