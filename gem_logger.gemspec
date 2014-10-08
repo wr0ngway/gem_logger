@@ -25,6 +25,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "minitest-reporters"
   spec.add_development_dependency "factory_girl"
   spec.add_development_dependency "faker"
+  spec.add_development_dependency "log4r"
 
   spec.add_dependency "activesupport"
 end
