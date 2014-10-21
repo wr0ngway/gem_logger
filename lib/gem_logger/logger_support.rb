@@ -60,7 +60,7 @@ module GemLogger
       # returned logger
       # @returns [LogContextLogger] - logger with the added context
       def context(added_context)
-        LogContextLogger.new(self.logger, self.log_context.merge(added_context))
+        LogContextLogger.new(self.logger, self.log_context.merge(added_context)).extend(GemLogger.context_handler)
       end
 
       # Adds an event_type to the context
@@ -101,7 +101,6 @@ module GemLogger
 
     LogContextLogger = Struct.new(:logger, :log_context) do
       include ContextLoggerCommon
-      include GemLogger.context_handler
 
       [:debug, :info, :warn, :error, :fatal].each do |method|
         define_method(method) { |msg| self.log(method, msg) }
