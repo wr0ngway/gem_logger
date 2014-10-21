@@ -35,7 +35,13 @@ module GemLogger
 
       setup do
         @old_default_logger = GemLogger.default_logger
-        GemLogger.default_logger = Minitest::Mock.new
+
+        mock = Minitest::Mock.new
+        def mock.extend(mod)
+          self
+        end
+
+        GemLogger.default_logger = mock
       end
 
       teardown do

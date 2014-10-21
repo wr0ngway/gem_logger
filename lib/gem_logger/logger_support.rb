@@ -12,6 +12,14 @@ module GemLogger
       include GemLogger.logger_concern
 
       delegate :logger, :log_exception, :log_warning, :log_message, :to => "self.class"
+
+      class << self
+        alias_method :_original_logger, :logger
+
+        def logger
+          self._original_logger.extend(LogContext)
+        end
+      end
     end
 
     module ClassMethods
@@ -46,7 +54,6 @@ module GemLogger
       end
 
     end
-
 
     module ContextLoggerCommon
       # @param [Hash] added_context - A hash containing context that will be added to the log messages produced by the
