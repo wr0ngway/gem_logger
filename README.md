@@ -37,7 +37,7 @@ By default, log_exception uses the ERROR level, but also accepts a level as an o
     
 Unless otherwise specified, the context is added to the beginning of the log message in a basic key = value format. You can, however, define your own context handler, and pass it in on initialization:
 
-    GemLogger.configure do |config| do
+    GemLogger.configure do |config|
       config.context_handler = MyHandler
     end
 
