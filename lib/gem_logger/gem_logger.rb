@@ -29,7 +29,7 @@ module GemLogger
 
   # The default_logger to use with GemLogger::BasicLogger
   def self.default_logger
-    @default_logger ||= ::Logger.new(STDOUT).extend(LoggerSupport::LogContext)
+    @default_logger ||= ::Logger.new(STDOUT)
   end
 
   # Set the default_logger to use with GemLogger::BasicLogger

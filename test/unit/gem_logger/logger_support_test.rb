@@ -1,4 +1,5 @@
 require_relative '../../test_helper'
+require 'active_support/core_ext/module/delegation'
 
 module GemLogger
   class LoggerSupportTest < Minitest::Should::TestCase
@@ -35,7 +36,13 @@ module GemLogger
 
       setup do
         @old_default_logger = GemLogger.default_logger
-        GemLogger.default_logger = Minitest::Mock.new
+
+        mock = Minitest::Mock.new
+        def mock.extend(mod)
+          self
+        end
+
+        GemLogger.default_logger = mock
       end
 
       teardown do
@@ -118,56 +125,85 @@ module GemLogger
 
     context "logger with added context" do
 
+      class Context
+        class << self
+          attr_accessor :values
+        end
+
+        def self.get_context
+          self.values ||= {}
+        end
+
+        def self.add_to_context(key, value)
+          get_context[key] = value
+        end
+
+        def self.remove_from_context(key)
+          get_context.delete(key)
+        end
+      end
+
+      module TestContextHandler
+        extend ActiveSupport::Concern
+
+        delegate :get_context, :add_to_context, :remove_from_context, :to => Context
+
+        def format_msg_with_context(msg)
+          msg
+        end
+
+      end
+
       setup do
         class Foo; include GemLogger::LoggerSupport; end
+        GemLogger.context_handler = TestContextHandler
       end
 
       should "add the context to generated messages" do
 
-        GemLogger::LoggerSupport::LogContextLogger.any_instance.expects(:add_to_context).with("ctx", "1")
-        GemLogger::LoggerSupport::LogContextLogger.any_instance.expects(:remove_from_context).with('ctx')
+        Context.expects(:add_to_context).with("ctx", "1")
+        Context.expects(:remove_from_context).with('ctx')
         Foo.logger.expects(:info).with("msg")
-
         Foo.logger.context("ctx" => "1").info("msg")
       end
 
       should "allow symbols as contexts" do
-        GemLogger::LoggerSupport::LogContextLogger.any_instance.expects(:add_to_context).with(:ctx, "1")
-        GemLogger::LoggerSupport::LogContextLogger.any_instance.expects(:remove_from_context).with(:ctx)
+        Context.expects(:add_to_context).with(:ctx, "1")
+        Context.expects(:remove_from_context).with(:ctx)
 
         Foo.logger.context(:ctx => "1").info("msg")
       end
 
       should "implement debug" do
-        Foo.logger.expects(:debug).with("[ctx=1 ] msg")
+        Foo.logger.expects(:debug).with("msg")
         Foo.logger.context(:ctx => "1").debug("msg")
       end
 
       should "implement info" do
-        Foo.logger.expects(:info).with("[ctx=1 ] msg")
+        Foo.logger.expects(:info).with("msg")
         Foo.logger.context(:ctx => "1").info("msg")
       end
 
       should "implement warn" do
-        Foo.logger.expects(:warn).with("[ctx=1 ] msg")
+        Foo.logger.expects(:warn).with("msg")
         Foo.logger.context(:ctx => "1").warn("msg")
       end
 
       should "implement error" do
-        Foo.logger.expects(:error).with("[ctx=1 ] msg")
+        Foo.logger.expects(:error).with("msg")
         Foo.logger.context(:ctx => "1").error("msg")
       end
 
       should "implement fatal" do
-        Foo.logger.expects(:fatal).with("[ctx=1 ] msg")
+        Foo.logger.expects(:fatal).with("msg")
         Foo.logger.context(:ctx => "1").fatal("msg")
       end
 
       should 'allow context to be chained' do
-        GemLogger::LoggerSupport::LogContextLogger.any_instance.expects(:add_to_context).with('ctx', '1')
-        GemLogger::LoggerSupport::LogContextLogger.any_instance.expects(:remove_from_context).with('ctx')
-        GemLogger::LoggerSupport::LogContextLogger.any_instance.expects(:add_to_context).with('ctx2', '2')
-        GemLogger::LoggerSupport::LogContextLogger.any_instance.expects(:remove_from_context).with('ctx2')
+        Context.expects(:add_to_context).with('ctx', '1')
+        Context.expects(:remove_from_context).with('ctx')
+        Context.expects(:add_to_context).with('ctx2', '2')
+        Context.expects(:remove_from_context).with('ctx2')
         Foo.logger.expects(:info).with("msg")
 
         Foo.logger.context("ctx" => "1").context("ctx2" => "2").info("msg")
@@ -175,29 +211,28 @@ module GemLogger
 
       context "event_context" do
         should "add the event_type as context" do
-          GemLogger::LoggerSupport::LogContextLogger.any_instance.expects(:add_to_context).with(:event_type, :test_event)
-          GemLogger::LoggerSupport::LogContextLogger.any_instance.expects(:remove_from_context).with(:event_type)
+          Context.expects(:add_to_context).with(:event_type, :test_event)
+          Context.expects(:remove_from_context).with(:event_type)
 
           Foo.logger.expects(:info).with("msg")
           Foo.logger.event_context(:test_event).info("msg")
         end
 
         should "include the context of the logger used" do
-          GemLogger::LoggerSupport::LogContextLogger.any_instance.expects(:add_to_context).with(:event_type, :test_event)
-          GemLogger::LoggerSupport::LogContextLogger.any_instance.expects(:remove_from_context).with(:event_type)
-          GemLogger::LoggerSupport::LogContextLogger.any_instance.expects(:add_to_context).with(:ctx, '1')
-          GemLogger::LoggerSupport::LogContextLogger.any_instance.expects(:remove_from_context).with(:ctx)
+          Context.expects(:add_to_context).with(:event_type, :test_event)
+          Context.expects(:remove_from_context).with(:event_type)
+          Context.expects(:add_to_context).with(:ctx, '1')
+          Context.expects(:remove_from_context).with(:ctx)
 
           Foo.logger.expects(:error).with("msg")
           Foo.logger.context(:ctx => "1").event_context(:test_event).error("msg")
         end
 
         should 'restore previous log context after logging' do
-          GemLogger::LoggerSupport::LogContextLogger.any_instance.stubs(:get_context).returns({'foo' => 'bar'})
-          GemLogger::LoggerSupport::LogContextLogger.any_instance.expects(:add_to_context).with(:event_type, {'foo' => 'baz'})
-          GemLogger::LoggerSupport::LogContextLogger.any_instance.expects(:remove_from_context).with(:event_type)
-          GemLogger::LoggerSupport::LogContextLogger.any_instance.expects(:format_msg_with_context).with('msg')
-          GemLogger::LoggerSupport::LogContextLogger.any_instance.expects(:add_to_context).with('foo', 'bar')
+          Context.stubs(:get_context).returns({'foo' => 'bar'})
+          Context.expects(:add_to_context).with(:event_type, {'foo' => 'baz'})
+          Context.expects(:remove_from_context).with(:event_type)
+          Context.expects(:add_to_context).with('foo', 'bar')
 
           Foo.logger.event_context('foo' => 'baz').info("msg")
         end
@@ -205,8 +240,8 @@ module GemLogger
 
       context "exception_context" do
         should "add the exception class as context" do
-          GemLogger::LoggerSupport::LogContextLogger.any_instance.expects(:add_to_context).with(:exception, 'StandardError')
-          GemLogger::LoggerSupport::LogContextLogger.any_instance.expects(:remove_from_context).with(:exception)
+          Context.expects(:add_to_context).with(:exception, 'StandardError')
+          Context.expects(:remove_from_context).with(:exception)
 
           Foo.logger.expects(:info).with("msg")
           Foo.logger.exception_context(StandardError.new).info("msg")
@@ -215,20 +250,20 @@ module GemLogger
 
       context "log_exception" do
         should "add the exception class as context" do
-          GemLogger::LoggerSupport::LogContextLogger.any_instance.expects(:add_to_context).with(:exception, 'StandardError')
-          GemLogger::LoggerSupport::LogContextLogger.any_instance.expects(:remove_from_context).with(:exception)
+          Context.expects(:add_to_context).with(:exception, 'StandardError')
+          Context.expects(:remove_from_context).with(:exception)
 
           Foo.logger.expects(:error)
           Foo.logger.log_exception(StandardError.new, "msg")
         end
 
         should "log the backtrace" do
-          Foo.logger.expects(:error).with("[exception=StandardError ] msg: err (no backtrace)")
+          Foo.logger.expects(:error).with("msg: err (no backtrace)")
           Foo.logger.log_exception(StandardError.new("err"), "msg")
         end
 
         should 'allow the level to be changed as an option' do
-          Foo.logger.expects(:warn).with("[exception=StandardError ] msg: err (no backtrace)")
+          Foo.logger.expects(:warn).with("msg: err (no backtrace)")
           Foo.logger.log_exception(StandardError.new("err"), "msg", :level => :warn)
         end
       end
