@@ -1,0 +1,14 @@
+0.3.0 (10/29/2014)
+------------------
+
+Log4r handler. <2496da6> [Kenneth Hoffmann]
+Merge pull request #2 from KenBackupify/context_update <fe65c3c> [Matt Conway]
+Merge pull request #3 from ANorwell/universal_context_logging <b69aa83> [Matt Conway]
+README fix. <3cd4c03> [Kenneth Hoffmann]
+allow the context handler to be set after LoggerSupport is defined <f0b1dbe> [Arron Norwell]
+make LogContext methods available for all logger concerns, not just the basic logger <608d61e> [Arron Norwell]
+
+0.2.0 (10/08/2014)
+------------------
+
+Add context logging. <55283fa> [Kenneth Hoffmann]
